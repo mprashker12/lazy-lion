@@ -7,3 +7,10 @@ edition = "2021"
 
 [dependencies]
 square_reed_solomon = { path = "../square_reed_solomon"}
+ark-crypto-primitives = { version = "0.4.0", features = ["sponge"] }
+ark-ec = { version = "^0.4.0", default-features = false }
+ark-ff = "0.4.2"
+ark-poly = "0.4.2"
+ark-poly-commit = { git = "https://github.com/arkworks-rs/poly-commit" }
+ark-test-curves = { version = "0.4.2", features = ["bls12_381_curve"] }
+rand = "0.8.5"

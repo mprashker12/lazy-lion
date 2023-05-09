@@ -144,10 +144,12 @@ pub fn is_power_of_two(x: usize) -> bool {
 }
 
 mod tests {
-    use super::*;
+    use rs_line::RsLine;
+
     // Use BLS12_381 (pairing-friendly EC) for KZG
     use ark_test_curves::bls12_381::Bls12_381;
     use ark_test_curves::bls12_381::Fr;
+    use crate::rs_line;
     use crate::rs_square::RsSquare;
 
     #[test]
@@ -165,6 +167,8 @@ mod tests {
 
         let mut square = RsSquare::new(lines.as_slice(), 2);
         square.extend();
+
+        // square should now be 8 x 8 and should contain original entries at even (x,y) coords.
         println!("{:?}", square);
     }
 }

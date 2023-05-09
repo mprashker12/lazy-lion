@@ -10,12 +10,14 @@ use ark_poly_commit::kzg10::{self, Powers, KZG10, VerifierKey};
 use kzg10::Commitment;
 
 pub struct RsSquareProver<E: Pairing> {
+    /// Original square of shares of data
     shares: Vec<Vec<E::ScalarField>>,
+    /// Scale used to extend shares to create square
     scale: usize,
+    /// Reed-Solomon Encoded square of data
     square: RsSquare<E::ScalarField>,
     max_degree: usize,
     params: kzg10::UniversalParams<E>,
-    vk: kzg10::VerifierKey<E>,
     _phantom: PhantomData<E>,
 }
 
@@ -39,23 +41,12 @@ impl<E: Pairing> RsSquareProver<E> {
         )
         .expect("KZG setup failed");
 
-        //todo: Move this to an "interaction module"
-        let vk = VerifierKey {
-            g: params.powers_of_g[0],
-            gamma_g: params.powers_of_gamma_g[&0],
-            h: params.h,
-            beta_h: params.beta_h,
-            prepared_h: params.prepared_h.clone(),
-            prepared_beta_h: params.prepared_beta_h.clone(),
-        };
-
         Self {
             shares: shares.to_owned(),
             scale,
             square,
             params,
             max_degree,
-            vk,
             _phantom: PhantomData,
         }
     }

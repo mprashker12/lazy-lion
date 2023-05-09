@@ -1,1 +1,1 @@
-use square_reed_solomon::rs_square;
+use square_reed_solomon::prover;
