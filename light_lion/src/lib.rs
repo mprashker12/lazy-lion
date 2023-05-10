@@ -5,6 +5,8 @@ use ark_poly::univariate::DensePolynomial;
 use ark_poly_commit::kzg10::{self, Powers, VerifierKey, KZG10};
 use rand::rngs::OsRng;
 
+pub mod node;
+
 pub fn setup<E: Pairing>(params: kzg10::UniversalParams<E>) {
     let vk: ark_poly_commit::kzg10::VerifierKey<E> = VerifierKey {
         g: params.powers_of_g[0],
