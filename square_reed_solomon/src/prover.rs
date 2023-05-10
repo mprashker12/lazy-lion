@@ -3,13 +3,16 @@ use crate::rs_square::RsSquare;
 
 use rand::rngs::OsRng;
 use std::marker::PhantomData;
+use rs_merkle::{MerkleTree, algorithms::Sha256, Hasher};
 
 use ark_ec::pairing::Pairing;
 use ark_poly::univariate::DensePolynomial;
 use ark_poly_commit::kzg10::{self, Powers, VerifierKey, KZG10};
+use ark_serialize::CanonicalSerialize;
 use kzg10::Commitment;
 
-pub struct RsSquareProver<E: Pairing> {
+
+pub struct RsSquareProver<E: Pairing, H : Hasher> {
     /// Original square of shares of data
     shares: Vec<Vec<E::ScalarField>>,
     /// Scale used to extend shares to create square
@@ -18,10 +21,11 @@ pub struct RsSquareProver<E: Pairing> {
     square: RsSquare<E::ScalarField>,
     max_degree: usize,
     params: kzg10::UniversalParams<E>,
-    _phantom: PhantomData<E>,
+    _pairing_phantom: PhantomData<E>,
+    _hasher_phantom: PhantomData<H>,
 }
 
-impl<E: Pairing> RsSquareProver<E> {
+impl<E: Pairing, H: Hasher> RsSquareProver<E, H> {
     pub fn new(shares: &Vec<Vec<E::ScalarField>>, scale: usize) -> Self {
         let lines = shares
             .iter()
@@ -41,13 +45,15 @@ impl<E: Pairing> RsSquareProver<E> {
         )
         .expect("KZG setup failed");
 
+
         Self {
             shares: shares.to_owned(),
             scale,
             square,
             params,
             max_degree,
-            _phantom: PhantomData,
+            _pairing_phantom: PhantomData,
+            _hasher_phantom: PhantomData,
         }
     }
 
@@ -78,7 +84,28 @@ impl<E: Pairing> RsSquareProver<E> {
         com
     }
 
-    pub fn prove(&self) {}
+    fn hash_commitment(&self, com : Commitment<E>) -> H::Hash {
+        let com_point = com.0;
+        let mut bytes: Vec<u8> = vec![];
+        let _ = com_point.serialize_uncompressed(&mut bytes).expect("Serializing commitment point should not fail");
+        H::hash(bytes.as_slice())
+    }
+
+    pub fn row_root(&self) -> H::Hash {
+        let leaves : Vec<H::Hash> = (0..self.max_degree).map(|rid| {
+            self.hash_commitment(self.commit_to_row(rid))
+        }).collect();
+        let row_tree = MerkleTree::<H>::from_leaves(leaves.as_slice());
+        row_tree.root().expect("Merkle root construction of rows should succeed")
+    }
+
+    pub fn col_root(&self) -> H::Hash {
+        let leaves : Vec<H::Hash> = (0..self.max_degree).map(|cid| {
+            self.hash_commitment(self.commit_to_col(cid))
+        }).collect();
+        let col_tree = MerkleTree::<H>::from_leaves(leaves.as_slice());
+        col_tree.root().expect("Merkle root construction of rows should succeed")
+    }
 }
 
 #[cfg(test)]
@@ -90,6 +117,9 @@ mod tests {
     use crate::rs_square::RsSquare;
     use ark_test_curves::bls12_381::Bls12_381;
     use ark_test_curves::bls12_381::Fr;
+
+    // Use Sha256 for Merkle Hashing
+    use rs_merkle::algorithms::Sha256;
 
     #[test]
     pub fn basic_rs_prover() {
@@ -104,6 +134,6 @@ mod tests {
         // scale factor to dilate original shares (must be a power of 2)
         let scale: usize = 2;
 
-        let mut prover = RsSquareProver::<Bls12_381>::new(&shares, scale);
+        let mut prover = RsSquareProver::<Bls12_381, Sha256>::new(&shares, scale);
     }
 }

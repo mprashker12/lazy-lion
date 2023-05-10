@@ -175,7 +175,8 @@ mod tests {
         let mut square = RsSquare::new(lines.as_slice(), scale);
         square.extend();
 
-        // square should now be 8 x 8 and should contain original entries at even (x,y) coords.
+        // square should now be 4*4 x 4*4 and should contain original entries at (x,y) coords
+        // with x and y divisible by 4.
         for rid in 0..4 {
             for cid in 0..4 {
                 assert_eq!(square.val_at(rid * scale, cid * scale), shares[rid][cid]);

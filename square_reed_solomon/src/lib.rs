@@ -1,3 +1,5 @@
+extern crate core;
+
 pub mod prover;
 pub mod rs_square;
 
