@@ -84,6 +84,10 @@ impl<F: PrimeField> RsSquare<F> {
         }
     }
 
+    pub fn val_at(&self, rid: usize, cid: usize) -> F {
+        self.rows[rid].get_element_at(cid)
+    }
+
     pub fn extend(&mut self) {
         // extend rows for which we originally have data shares in
         for rid in 0..self.n_rows {
@@ -147,10 +151,10 @@ mod tests {
     use rs_line::RsLine;
 
     // Use BLS12_381 (pairing-friendly EC) for KZG
-    use ark_test_curves::bls12_381::Bls12_381;
-    use ark_test_curves::bls12_381::Fr;
     use crate::rs_line;
     use crate::rs_square::RsSquare;
+    use ark_test_curves::bls12_381::Bls12_381;
+    use ark_test_curves::bls12_381::Fr;
 
     #[test]
     pub fn basic_square() {
@@ -161,14 +165,21 @@ mod tests {
             vec![Fr::from(12), Fr::from(13), Fr::from(14), Fr::from(15)],
         ];
 
-        let lines : Vec<RsLine<_>> = shares.into_iter().map(|share| {
-            RsLine::new(&share, 2)
-        }).collect();
+        let scale = 4;
+        let lines: Vec<RsLine<_>> = shares
+            .clone()
+            .into_iter()
+            .map(|share| RsLine::new(&share, scale))
+            .collect();
 
-        let mut square = RsSquare::new(lines.as_slice(), 2);
+        let mut square = RsSquare::new(lines.as_slice(), scale);
         square.extend();
 
         // square should now be 8 x 8 and should contain original entries at even (x,y) coords.
-        println!("{:?}", square);
+        for rid in 0..4 {
+            for cid in 0..4 {
+                assert_eq!(square.val_at(rid * scale, cid * scale), shares[rid][cid]);
+            }
+        }
     }
 }
