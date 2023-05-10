@@ -2,7 +2,7 @@
 
 members = [
 	"square_reed_solomon",
-	"lion_messages",
+	"lion_roars",
 	"full_lion",
 	"light_lion"
 ]

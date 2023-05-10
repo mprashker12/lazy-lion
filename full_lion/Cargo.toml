@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 square_reed_solomon = { path = "../square_reed_solomon"}
+lion_roars = { path = "../lion_roars" }
 ark-crypto-primitives = { version = "0.4.0", features = ["sponge"] }
 ark-ec = { version = "^0.4.0", default-features = false }
 ark-ff = "0.4.2"
@@ -16,3 +17,4 @@ ark-test-curves = { version = "0.4.2", features = ["bls12_381_curve"] }
 rand = "0.8.5"
 rs_merkle = "1.4.0"
 anyhow = "1.0.71"
+tokio = { version = "1.28.1", features = ["full"] }
