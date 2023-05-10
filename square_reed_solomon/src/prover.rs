@@ -2,8 +2,8 @@ use crate::rs_line::RsLine;
 use crate::rs_square::RsSquare;
 
 use rand::rngs::OsRng;
+use rs_merkle::{algorithms::Sha256, Hasher, MerkleTree};
 use std::marker::PhantomData;
-use rs_merkle::{MerkleTree, algorithms::Sha256, Hasher};
 
 use ark_ec::pairing::Pairing;
 use ark_poly::univariate::DensePolynomial;
@@ -11,8 +11,7 @@ use ark_poly_commit::kzg10::{self, Powers, VerifierKey, KZG10};
 use ark_serialize::CanonicalSerialize;
 use kzg10::Commitment;
 
-
-pub struct RsSquareProver<E: Pairing, H : Hasher> {
+pub struct RsSquareProver<E: Pairing, H: Hasher> {
     /// Original square of shares of data
     shares: Vec<Vec<E::ScalarField>>,
     /// Scale used to extend shares to create square
@@ -44,7 +43,6 @@ impl<E: Pairing, H: Hasher> RsSquareProver<E, H> {
             &mut OsRng::default(),
         )
         .expect("KZG setup failed");
-
 
         Self {
             shares: shares.to_owned(),
@@ -84,27 +82,40 @@ impl<E: Pairing, H: Hasher> RsSquareProver<E, H> {
         com
     }
 
-    fn hash_commitment(&self, com : Commitment<E>) -> H::Hash {
+    fn hash_commitment(&self, com: Commitment<E>) -> H::Hash {
         let com_point = com.0;
         let mut bytes: Vec<u8> = vec![];
-        let _ = com_point.serialize_uncompressed(&mut bytes).expect("Serializing commitment point should not fail");
+        let _ = com_point
+            .serialize_uncompressed(&mut bytes)
+            .expect("Serializing commitment point should not fail");
         H::hash(bytes.as_slice())
     }
 
     pub fn row_root(&self) -> H::Hash {
-        let leaves : Vec<H::Hash> = (0..self.max_degree).map(|rid| {
-            self.hash_commitment(self.commit_to_row(rid))
-        }).collect();
+        let leaves: Vec<H::Hash> = (0..self.max_degree)
+            .map(|rid| self.hash_commitment(self.commit_to_row(rid)))
+            .collect();
         let row_tree = MerkleTree::<H>::from_leaves(leaves.as_slice());
-        row_tree.root().expect("Merkle root construction of rows should succeed")
+        row_tree
+            .root()
+            .expect("Merkle root construction of rows should succeed")
     }
 
     pub fn col_root(&self) -> H::Hash {
-        let leaves : Vec<H::Hash> = (0..self.max_degree).map(|cid| {
-            self.hash_commitment(self.commit_to_col(cid))
-        }).collect();
+        let leaves: Vec<H::Hash> = (0..self.max_degree)
+            .map(|cid| self.hash_commitment(self.commit_to_col(cid)))
+            .collect();
         let col_tree = MerkleTree::<H>::from_leaves(leaves.as_slice());
-        col_tree.root().expect("Merkle root construction of rows should succeed")
+        col_tree
+            .root()
+            .expect("Merkle root construction of rows should succeed")
+    }
+
+    pub fn root(&self) -> H::Hash {
+        let row_col_tree = MerkleTree::<H>::from_leaves(&[self.row_root(), self.col_root()]);
+        row_col_tree
+            .root()
+            .expect("Merkle root construction from row and col roots should succeed")
     }
 }
 

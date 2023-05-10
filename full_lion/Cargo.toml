@@ -14,3 +14,5 @@ ark-poly = "0.4.2"
 ark-poly-commit = { git = "https://github.com/arkworks-rs/poly-commit" }
 ark-test-curves = { version = "0.4.2", features = ["bls12_381_curve"] }
 rand = "0.8.5"
+rs_merkle = "1.4.0"
+anyhow = "1.0.71"
